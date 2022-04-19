@@ -6,12 +6,19 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
 public class Window extends BasePage {
     public final String windowName;
     public final WebElement windowWebElement;
+
+    public Window(WebDriver driver, String windowName, WebElement windowWebElement) {
+        super(driver);
+        this.windowName = windowName;
+        this.windowWebElement = windowWebElement;
+    }
 
     private By BUTTON(String buttonTitle) {
         return By.xpath("//a[contains(@class, 'x-btn')]//span[contains(@class, 'x-btn-inner') and text()= '" + buttonTitle + "']");
@@ -37,10 +44,6 @@ public class Window extends BasePage {
         return By.xpath("//div[contains(@class, 'x-boundlist-floating')][last()]//ul[contains(@class, 'x-list-plain')]//li[text()='" + property + "']");
     }
 
-    private By ELEMENT_PRIM_VALUE_LIST(String primValue) {
-        return By.xpath("//div[contains(@class, 'x-boundlist-floating')][last()]//ul[contains(@class, 'x-list-plain')]//li[text()='" + primValue + "']");
-    }
-
     private By ELEMENT_OPERATOR_LIST(String operator) {
         return By.xpath("//div[contains(@class, 'x-boundlist-floating')][last()]//ul[contains(@class, 'x-list-plain')]//li[text()='" + operator + "']");
     }
@@ -48,18 +51,15 @@ public class Window extends BasePage {
     private final By FILTER_TRIGGER = By.xpath("//div[contains(@aria-label, 'Expand Filter')]//div[contains(@class, 'x-tool-img')]");
     private final By CLEAR_FILTER_BUTTON = By.xpath("//a[contains(@class, 'clearButton')]");
     private final By APPLY_FILTER_BUTTON = By.xpath("//a[contains(@class, 'findButton')]");
-//    private final By COLLAPSE_FILTER_BUTTON = By.xpath("//div[contains(@aria-label, 'Collapse Filter')]");
-
-    private final By FILTER_PRIM_VALUE_TRIGGER = By.xpath("//div[contains(@class, 'FilterForm')][last() - 1]" +
-            "//div[contains(@class, 'FilterValue')]//div[contains(@class, 'x-form-arrow-trigger')]");
-
-    private final By SECOND_FILTER_VALUE_FIELD = By.xpath("//input[contains(@name, 'filterField')]" +
-            "//input[contains(@aria-owns, 'boundlist')]/../../../../..//div[contains(@class, 'FilterValue')]" +
-            "//div[contains(@class, 'x-field')][2]//input[last()]");
 
 
-    private final By FILTER_PANEL = By.xpath("//div[contains(@role, 'button')]" +
-            "//div[contains(@class, 'x-tool-expand-bottom')]");
+    private final By XMASK = By.xpath("//div[contains(@class, 'xmask')]");
+    private final By XMASK_VISIBLE = By.xpath("//div[contains(@aria-hidden, 'true')]");
+    private final By AMOUNT_ELEMENTS_IN_GRID = By.xpath("//div[contains(@class, 'x-grid table')]");
+
+    private final By FIRST_FILTER_VALUE_FIELD = By.xpath("//div[contains(@class, 'FilterForm ')][1]" +
+            "//div[contains(@class, 'FilterValue')]//div[contains(@class, 'x-form-text-field-body')]" +
+            "//input[contains(@class, 'x-form-field')]");
 
     private final By FILTER_PANEL_LAST = By.xpath("//div[contains(@role, 'button')]" +
             "//div[contains(@class, 'x-tool-expand-bottom')][last()]");  //ToDo может не работать
@@ -76,15 +76,8 @@ public class Window extends BasePage {
             "/../..//div[contains(@class, 'x-form-trigger')][last()]")); //ToDo может не работать
 
 
-    private final By FILTER_OPERATOR_TRIGGER1 = By.xpath("//input[contains(@name, 'filterField')]" +
-            "//input[contains(@aria-owns, 'boundlist')]/../../../../..//div[contains(@class, 'FilterOperator')]" +
-            "//div[contains(@class, 'x-form-arrow-trigger')]");
-
-    public Window(WebDriver driver, String windowName, WebElement windowWebElement) {
-        super(driver);
-        this.windowName = windowName;
-        this.windowWebElement = windowWebElement;
-    }
+    private final By FILTER_OPERATOR_TRIGGER1 = By.xpath("//div[contains(@class, 'FilterOperator')]" +
+            "//div[contains(@class, 'x-form-item-body')]//div[contains(@class, 'x-form-trigger-wrap')]//div[contains(@class, 'x-form-trigger')]");
 
     public void pressButton(String buttonName) {
         windowWebElement.findElement(BUTTON(buttonName)).click();
@@ -149,15 +142,7 @@ public class Window extends BasePage {
     }
 
     public void fillSingleValueOfFilter(String primValue) {
-        if (windowWebElement.findElement(FILTER_PRIM_VALUE_TRIGGER).isDisplayed()) {
-            windowWebElement.findElement(FILTER_PRIM_VALUE_TRIGGER).click();
-
-            windowWebElement.findElement(ELEMENT_PRIM_VALUE_LIST(primValue)).isDisplayed();
-            windowWebElement.findElement(ELEMENT_PRIM_VALUE_LIST(primValue)).click();
-
-        } else {
-            windowWebElement.findElement(ELEMENT_PRIM_VALUE_LIST(primValue)).sendKeys(primValue);
-        }
+            windowWebElement.findElement(FIRST_FILTER_VALUE_FIELD).sendKeys(primValue);
     }
 
     public void applyFilter() {
@@ -168,6 +153,28 @@ public class Window extends BasePage {
     public void collapseFilter() {
         windowWebElement.findElement(COLLAPSE_FILTER_BUTTON).isDisplayed();
         windowWebElement.findElement(COLLAPSE_FILTER_BUTTON).click();
+    }
+
+    public void inWindowDisplayedOneRecord() {
+        waitLoadingForm();
+        assert 1 == checkGrid();
+    }
+
+    public void waitLoadingForm() {
+        if (!windowWebElement.findElements(XMASK).isEmpty()) {
+
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(0));
+            Awaitility.await()
+                    .atMost(2, TimeUnit.SECONDS)
+                    .pollInterval(5, TimeUnit.MILLISECONDS)
+                    .until(() -> driver.findElements(XMASK_VISIBLE).isEmpty());
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
+        }
+    }
+
+    public Integer checkGrid() {
+       List<WebElement> records = windowWebElement.findElements(AMOUNT_ELEMENTS_IN_GRID);
+       return records.size();
     }
 
 

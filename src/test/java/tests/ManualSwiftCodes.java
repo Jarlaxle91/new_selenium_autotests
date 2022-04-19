@@ -24,6 +24,17 @@ public class ManualSwiftCodes extends TestBase {
 //        addSwiftCodeWindow.pressButton("Save");
 //        addSwiftCodeWindow.windowClosed();
         swiftCodesManualWindow.applyFilter("Code", "LIKE", "BNS123ZASXX");
+//        swiftCodesManualWindow.inWindowDisplayedOneRecord();
+    }
+
+    @Test
+    void createManualSwiftCode_1() {
+        new LoginPageCbs(driver).login();
+        MainPageCbs mainPageCbs = new MainPageCbs(driver);
+
+        Window swiftCodesManualWindow = mainPageCbs.openWindow("Dictionaries > SWIFT codes > SWIFT codes manual", null);
+        swiftCodesManualWindow.applyFilter("Code", "LIKE", "BNS123ZASXX");
+
     }
 
 }
