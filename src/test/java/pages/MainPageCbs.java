@@ -1,5 +1,6 @@
 package pages;
 
+import io.qameta.allure.Step;
 import org.awaitility.Awaitility;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -23,6 +24,7 @@ public class MainPageCbs extends BasePage {
         super(driver);
     }
 
+    @Step(value = "Go to window by path {0}")
     public Window openWindow(String menuPath, String windowName) {
         String finalWindowName;
         if (windowName == null) {
@@ -37,6 +39,7 @@ public class MainPageCbs extends BasePage {
         return new Window(driver, finalWindowName, driver.findElement(WINDOW(finalWindowName)));
     }
 
+    @Step(value = "Window {0} is displayed")
     public Window findWindow(String windowName) {
         return new Window(driver, windowName, driver.findElement(WINDOW(windowName)));
     }
