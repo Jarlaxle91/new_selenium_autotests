@@ -22,6 +22,4 @@ public class BasePage {
 
     public String ARIA_OWNS = "aria-owns";
 
-
-
 }

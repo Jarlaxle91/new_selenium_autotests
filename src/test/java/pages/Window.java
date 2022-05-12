@@ -1,14 +1,18 @@
 package pages;
 
+import io.qameta.allure.Step;
+import org.apache.commons.lang.math.NumberUtils;
 import org.awaitility.Awaitility;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
+import java.util.stream.Collectors;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Window extends BasePage {
     public final String windowName;
@@ -62,27 +66,32 @@ public class Window extends BasePage {
             "//input[contains(@class, 'x-form-field')]");
 
     private final By FILTER_PANEL_LAST = By.xpath("//div[contains(@role, 'button')]" +
-            "//div[contains(@class, 'x-tool-expand-bottom')][last()]");  //ToDo может не работать
+            "//div[contains(@class, 'x-tool-expand-bottom')][last()]");
 
     private final By COLLAPSE_FILTER_BUTTON = By.xpath("//div[contains(@role, 'button')]" +
             "//div[contains(@class, 'x-tool-collapse-top')]");
 
     private final By FILTER_PROPERTY_TRIGGER = By.xpath(("(//div[contains(@class, 'x-container-default')]" +
             "//a[contains(@class, 'filterCheckbox')]/../../..)[last()]//input[contains(@name, 'filterField')]" +
-            "/../..//div[contains(@class, 'x-form-trigger')][1]")); //ToDo может не работать
+            "/../..//div[contains(@class, 'x-form-trigger')][1]"));
 
     private final By FILTER_OPERATOR_TRIGGER = By.xpath(("(//div[contains(@class, 'x-container-default')]" +
             "//a[contains(@class, 'filterCheckbox')]/../../..)[last()]//input[contains(@name, 'filterField')]" +
-            "/../..//div[contains(@class, 'x-form-trigger')][last()]")); //ToDo может не работать
+            "/../..//div[contains(@class, 'x-form-trigger')][last()]"));
+
+    private final By DISPLAYED_ELEMENTS_OF_GRID = By.xpath("//div[contains(@class, 'x-window-body')]//tr[contains(@class, '  x-grid-row')]");
 
 
     private final By FILTER_OPERATOR_TRIGGER1 = By.xpath("//div[contains(@class, 'FilterOperator')]" +
             "//div[contains(@class, 'x-form-item-body')]//div[contains(@class, 'x-form-trigger-wrap')]//div[contains(@class, 'x-form-trigger')]");
 
+
+    @Step(value = "Press {0} button")
     public void pressButton(String buttonName) {
         windowWebElement.findElement(BUTTON(buttonName)).click();
     }
 
+    @Step(value = "Select field {0} and set value {1}")
     public void setTextValue(String inputName, String value) {
         windowWebElement.findElement(INPUT(inputName)).sendKeys(value);
     }
@@ -91,6 +100,7 @@ public class Window extends BasePage {
         windowWebElement.findElement(TEXTAREA(inputName)).sendKeys(value);
     }
 
+    @Step(value = "Select field {0} and set value {1} in dropdown list")
     public void setDropdownValue(String inputName, String value) {
         windowWebElement.findElement(DROPDOWN_TRIGGER(inputName)).click();
         WebElement input = windowWebElement.findElement(INPUT(inputName));
@@ -98,17 +108,19 @@ public class Window extends BasePage {
         windowWebElement.findElement(DROPDOWN_VALUE(ariaOwns, value)).click();
     }
 
+    @Step(value = "Window was closed automatically")
     public void windowClosed() {
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(0));
         Awaitility.await()
-                .atMost(2, TimeUnit.SECONDS)
-                .pollInterval(5, TimeUnit.MILLISECONDS)
+                .atMost(5, TimeUnit.SECONDS)
+                .pollInterval(50, TimeUnit.MILLISECONDS)
                 .until(() -> driver.findElements(WINDOW(windowName)).isEmpty());
 
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
     }
 
-    public void applyFilter(String property, String operator, String value) {
+    @Step(value = "Apply single filter: property: {0}, operator: {1},  value: {2}")
+    public void applySingleFilter(String property, String operator, String value) {
         expandFilter();
         clearFilter();
 
@@ -155,27 +167,15 @@ public class Window extends BasePage {
         windowWebElement.findElement(COLLAPSE_FILTER_BUTTON).click();
     }
 
-    public void inWindowDisplayedOneRecord() {
-        waitLoadingForm();
-        assert 1 == checkGrid();
-    }
+    public void inWindowDisplayedRecords(Integer expectedRecords) {
+        windowWebElement.findElement(BUTTON("Refresh")).click();
 
-    public void waitLoadingForm() {
-        if (!windowWebElement.findElements(XMASK).isEmpty()) {
-
-            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(0));
-            Awaitility.await()
-                    .atMost(2, TimeUnit.SECONDS)
-                    .pollInterval(5, TimeUnit.MILLISECONDS)
-                    .until(() -> driver.findElements(XMASK_VISIBLE).isEmpty());
-            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
-        }
+        Integer amountDisplayedRecords = windowWebElement.findElements(DISPLAYED_ELEMENTS_OF_GRID).size();
+        assertEquals(expectedRecords, amountDisplayedRecords);
     }
 
     public Integer checkGrid() {
        List<WebElement> records = windowWebElement.findElements(AMOUNT_ELEMENTS_IN_GRID);
        return records.size();
     }
-
-
 }
